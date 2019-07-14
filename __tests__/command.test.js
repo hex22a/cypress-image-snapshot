@@ -21,6 +21,7 @@ global.cy = {
 const {
   matchImageSnapshotCommand,
   addMatchImageSnapshotCommand,
+  addToNotMatchImageSnapshotCommand,
 } = require('../src/command');
 
 const defaultOptions = {
@@ -52,56 +53,125 @@ describe('command', () => {
     });
   });
 
-  it('should pass', () => {
-    global.cy.task = jest.fn().mockResolvedValue({ pass: true });
+  describe('calling command', () => {
+    describe('to match image snapshot', () => {
+      it('should pass', () => {
+        global.cy.task = jest.fn().mockResolvedValue({ pass: true });
 
-    expect(
-      boundMatchImageSnapshot(subject, commandOptions)
-    ).resolves.not.toThrow();
-  });
+        expect(
+          boundMatchImageSnapshot(subject, commandOptions)
+        ).resolves.not.toThrow();
+      });
 
-  it('should fail', () => {
-    global.cy.task = jest.fn().mockResolvedValue({
-      pass: false,
-      added: false,
-      updated: false,
-      diffRatio: 0.1,
-      diffPixelCount: 10,
-      diffOutputPath: 'cheese',
+      it('should fail', () => {
+        global.cy.task = jest.fn().mockResolvedValue({
+          pass: false,
+          added: false,
+          updated: false,
+          diffRatio: 0.1,
+          diffPixelCount: 10,
+          diffOutputPath: 'cheese',
+        });
+
+        expect(
+          boundMatchImageSnapshot(subject, commandOptions)
+        ).rejects.toThrowErrorMatchingSnapshot();
+      });
     });
 
-    expect(
-      boundMatchImageSnapshot(subject, commandOptions)
-    ).rejects.toThrowErrorMatchingSnapshot();
+    describe('to not match image snapshot', () => {
+      it('should pass', () => {
+        global.cy.task = jest.fn().mockResolvedValue({
+          pass: false,
+          added: false,
+          updated: false,
+          diffRatio: 0.1,
+          diffPixelCount: 10,
+        });
+
+        expect(
+          boundMatchImageSnapshot(subject, commandOptions)
+        ).resolves.not.toThrow();
+      });
+
+      it('should fail', () => {
+        global.cy.task = jest.fn().mockResolvedValue({
+          pass: true,
+          added: false,
+          updated: false,
+          diffRatio: 0.1,
+          diffPixelCount: 10,
+          diffOutputPath: 'cheese',
+        });
+
+        expect(
+          boundMatchImageSnapshot(subject, commandOptions)
+        ).rejects.toThrowErrorMatchingSnapshot();
+      });
+    });
   });
 
-  it('should add command', () => {
-    Cypress.Commands.add.mockReset();
-    addMatchImageSnapshotCommand();
-    expect(Cypress.Commands.add).toHaveBeenCalledWith(
-      'matchImageSnapshot',
-      { prevSubject: ['optional', 'element', 'window', 'document'] },
-      expect.any(Function)
-    );
-  });
+  describe('adding command to Cypress', () => {
+    beforeEach(() => {
+      Cypress.Commands.add.mockReset();
+    });
 
-  it('should add command with custom name', () => {
-    Cypress.Commands.add.mockReset();
-    addMatchImageSnapshotCommand('sayCheese');
-    expect(Cypress.Commands.add).toHaveBeenCalledWith(
-      'sayCheese',
-      { prevSubject: ['optional', 'element', 'window', 'document'] },
-      expect.any(Function)
-    );
-  });
+    describe('snapshots match', () => {
+      it('should add command', () => {
+        addMatchImageSnapshotCommand();
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'matchImageSnapshot',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
 
-  it('should add command with options', () => {
-    Cypress.Commands.add.mockReset();
-    addMatchImageSnapshotCommand({ failureThreshold: 0.1 });
-    expect(Cypress.Commands.add).toHaveBeenCalledWith(
-      'matchImageSnapshot',
-      { prevSubject: ['optional', 'element', 'window', 'document'] },
-      expect.any(Function)
-    );
+      it('should add command with custom name', () => {
+        addMatchImageSnapshotCommand('sayCheese');
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'sayCheese',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
+
+      it('should add command with options', () => {
+        addMatchImageSnapshotCommand({ failureThreshold: 0.1 });
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'matchImageSnapshot',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
+    });
+
+    describe('snapshots do not match', () => {
+      it('should add command', () => {
+        addToNotMatchImageSnapshotCommand();
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'toNotMatchImageSnapshot',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
+
+      it('should add command with custom name', () => {
+        addToNotMatchImageSnapshotCommand('doNotSayCheese');
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'doNotSayCheese',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
+
+      it('should add command with options', () => {
+        addToNotMatchImageSnapshotCommand({ failureThreshold: 0.1 });
+        expect(Cypress.Commands.add).toHaveBeenCalledWith(
+          'toNotMatchImageSnapshot',
+          { prevSubject: ['optional', 'element', 'window', 'document'] },
+          expect.any(Function)
+        );
+      });
+    });
   });
 });
