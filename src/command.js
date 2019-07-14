@@ -79,3 +79,7 @@ export function addMatchImageSnapshotCommand(
     matchImageSnapshotCommand(options)
   );
 }
+
+export function addToNotMatchImageSnapshotCommand() {
+  throw new Error('Not implemented yet 🤷‍');
+}
